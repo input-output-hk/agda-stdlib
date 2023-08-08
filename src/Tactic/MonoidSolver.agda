@@ -256,15 +256,24 @@ constructSoln mon names lhs rhs =
 -- Macro
 ----------------------------------------------------------------------
 
-solve-macro : Term → Term → TC _
-solve-macro mon hole = do
-  hole′ ← inferType hole >>= normalise
+solve-macro′ : (Term → TC Term) → Term → Term → TC _
+solve-macro′ strat mon hole = do
+  hole′ ← inferType hole >>= strat
   names ← findMonoidNames mon
   just (lhs , rhs) ← pure (getArgs hole′)
     where nothing → typeError (termErr hole′ ∷ [])
   let soln = constructSoln mon names lhs rhs
   unify hole soln
 
+solve-macro : Term → Term → TC _
+solve-macro = solve-macro′ pure
+
+solve-normalised-macro : Term → Term → TC _
+solve-normalised-macro = solve-macro′ normalise
+
 macro
   solve : Term → Term → TC _
   solve = solve-macro
+
+  solve-normalised : Term → Term → TC _
+  solve-normalised = solve-normalised-macro
